@@ -19,21 +19,12 @@
 
 (defn hz
   "Determines frequency in hz from half-steps above given frequency"
-  [n]
+  ([n base]
   (if (= 0 n)
     0
-    (* 13.5 (Math/pow 1.059463 (hs n)))))
-
-(defn build-note
-  "Prepares note map to be sent to oscillators"
-  ([freq octave duration]
-  {:frequency freq
-   :octave    octave
-   :duration  duration})
-  ([freq octave]
-   (build-note freq octave 1))
-  ([freq]
-   (build-note freq 1 0.125)))
+    (* base ((.-pow js/Math) 1.059463 (hs n)))))
+  ([n]
+   (hz n 13.5)))
 
 (defn get-base-freq
   "Divides a frequency down until it is under 25hz and returns number of divisions it took"
@@ -78,9 +69,13 @@
 
 (defn play-note
   "Creates a synthesizer that connects web audio parts and generates frequency"
-  [freq octave sustain]
+  [pixel]
+  (prn "PIX" pixel)
   (let [osc     (.createOscillator ctx)
         vol     (.createGain ctx)
+        freq    (- 800 (:y pixel))
+        octave  1
+        sustain (:dur pixel)
         wave    (name (:wave @state/state))]
     (.connect osc vol)
     (.connect vol (.-destination ctx))
@@ -94,3 +89,8 @@
 
     (.start osc (.-currentTime ctx))
     (.stop osc (+ (.-currentTime ctx) sustain 1.25))))
+
+(defn play-notes []
+  (mapv play-note (->> @state/state
+                       :pixels
+                       (take-last (:voices @state/state)))))
