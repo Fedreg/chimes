@@ -19,12 +19,38 @@
 
 (defn hz
   "Determines frequency in hz from half-steps above given frequency"
-  ([n base]
-  (if (= 0 n)
-    0
-    (* base ((.-pow js/Math) 1.059463 (hs n)))))
+  ([base n]
+   (if (= 0 n)
+     0
+     (* base ((.-pow js/Math) 1.059463 (hs n))))) 
   ([n]
-   (hz n 13.5)))
+   (hz 13.5 n)))
+
+(defn interval
+  "Adds or subtracts n half-steps to a base freq."
+  [base hs dir]
+  (let [ratio (case hs
+                0  [1  1 ]
+                1  [16 15]
+                2  [9  8 ]
+                3  [6  5 ]
+                4  [5  4 ]
+                5  [4  3 ]
+                6  [45 32]
+                7  [3  2 ]
+                8  [8  5 ]
+                9  [5  3 ]
+                10 [9  5 ]
+                11 [15 8 ]
+                12 [2  1 ])
+        new   (-> base
+                  (/ (last ratio))
+                  (* (first ratio)))
+        diff  (- new base)
+        final (if (= :sub dir)
+                (- base diff)
+                new)]
+    final))
 
 (defn get-base-freq
   "Divides a frequency down until it is under 25hz and returns number of divisions it took"
@@ -40,7 +66,7 @@
     (let [base     (get-base-freq freq 0)
           pitch    (first base)
           divs     (last  base)
-          hzs      (map hz (range 1 10))
+          hzs      (map hz (range 1 9))
           p1       (nth hzs 0)
           p2       (nth hzs 1)
           p3       (nth hzs 2)
@@ -70,17 +96,16 @@
 (defn play-note
   "Creates a synthesizer that connects web audio parts and generates frequency"
   [pixel]
-  (prn "PIX" pixel)
   (let [osc     (.createOscillator ctx)
         vol     (.createGain ctx)
-        freq    (- 800 (:y pixel))
+        freq    (:y pixel)
         octave  1
         sustain (:dur pixel)
         wave    (name (:wave @state/state))]
     (.connect osc vol)
     (.connect vol (.-destination ctx))
 
-    (set! (.-valoe (.-gain vol)) 0)
+    (set! (.-value (.-gain vol)) 0)
     (.setTargetAtTime (.-gain vol) 0.25 (.-currentTime ctx) 0.05)
     (.setTargetAtTime (.-gain vol) 0.00 (+ (.-currentTime ctx) sustain) 0.25)
 

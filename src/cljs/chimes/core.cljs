@@ -35,16 +35,14 @@
 
 
 (defn new-pixel [pixel]
-  (prn "STATE" pixel)
-  (let [new-div  (.createElement  js/document "div")
-        ts       (.getTime (js/Date.))]
+  (let [new-div  (.createElement  js/document "div")]
     (set! (-> new-div .-style .-backgroundColor) (rand-rgb :blue))
     (set! (-> new-div .-style .-height) "20px")
     (set! (-> new-div .-style .-width) "20px")
     (set! (-> new-div .-style .-position) "absolute")
     (set! (-> new-div .-style .-top) (str (:y pixel) "px"))
     (set! (-> new-div .-style .-left) (str (:x pixel) "px"))
-    (set! (-> new-div .-id) ts)
+    (set! (-> new-div .-id) (:ts pixel))
     (set! (-> new-div .-style .-borderRadius) (str (* 0.5 (get-property new-div :width)) "px"))
     (.appendChild js/document.body new-div)
     (js/setTimeout 
@@ -84,27 +82,32 @@
 ;; Page
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn create-pixel-per-voice [x y]
+  (let [voices   (:voices @state/state)
+        duration (note-duration x)
+        ts       (.getTime (js/Date.))
+        freqs    (case voices
+                   1 [y]
+                   2 [y (audio/interval y 4 :add)]
+                   3 [y (audio/interval y 7 :add) (audio/interval y 12 :add)])]
+    (mapv (fn [-y] {:x x :y -y :dur duration :ts ts}) freqs)))
+
 (defn page [state]
   [:div {:style {:position "absolute"
                  :top 0
                  :bottom 0
-                 :color "white"
+                 :color "#666"
                  :left 0
                  :right 0
                  :transition "background-color 4.0s ease"
                  :backgroundColor "#222"}
          :id "main-div"
-         :on-click #(do (mapv update/add-pixel
-                               ;; TODO break out a function to create multiple pixels from sings x y.
-                               [{:x (.-pageX %)
-                                 :y (.-pageY %)
-                                 :dur (note-duration (.-pageX %))}
-                                {:x (.-pageX %)
-                                 :y (- (.-pageY %) 200)
-                                 :dur (note-duration (.-pageX %))}])
-                        (new-pixels)
-                        (audio/play-notes)
-                        )} @state])
+         :on-click #(do
+                      (mapv
+                       update/add-pixel
+                       (create-pixel-per-voice (.-pageX %) (.-pageY %)))
+                      (new-pixels)
+                      (audio/play-notes))} @state])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Initialize App

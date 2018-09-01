@@ -8,9 +8,13 @@
 
 (def init-state
   {:pitch-adjust? true 
+   :pixels        []
    :wave          :square
-   :voices        1
-   :mode          :lydian})
+   :index         0
+   :voices        3
+   :mode          :aeolian})
 
 (defonce state
   (reagent/atom init-state))
+
+
