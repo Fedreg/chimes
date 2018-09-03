@@ -60,15 +60,28 @@
     250)
     (kill-pixel new-div pixel)))
 
-(defn new-pixels []
-  (mapv new-pixel (->> @state/state
+(defn new-pixels
+  "Maps over the last few pixels in state to create new divs.  Channges the Y posiiton of each pixel to keep ratios even."
+  []
+  (let [pixels    (->> @state/state
                        :pixels
-                       (take-last (:voices @state/state)))))
+                       (take-last (:voices @state/state)))
+        intervals (:intervals @state/state)
+        ratio     (/ (:page-height @state/state) 50)
+        bass      (nth pixels 0)
+        tenor     (when (> (count pixels) 1) (nth pixels 1))
+        alto      (when (> (count pixels) 2) (nth pixels 2))
+        tenor     (when tenor
+                    (assoc tenor :y (- (:y bass) (* ratio (first intervals)))))
+        alto      (when alto 
+                    (assoc alto :y (- (:y bass) (* ratio (last intervals)))))]
+    (prn "SDFSDF" ratio intervals bass tenor alto)
+  (mapv new-pixel [bass tenor alto])))
 
 (defn note-duration
   "Determines note duration based on pageX position within frame.  First quarter of screen is whole note, next quarter is half note, ...quarter, eigth"
   [y]
-  (let [frame   js/window.outerWidth
+  (let [frame   (:page-width @state/state) ;js/window.outerWidth
         half    (/ frame 2)
         quarter (/ half 2)
         dur     (cond
@@ -83,16 +96,19 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn create-pixel-per-voice [x y]
-  (let [voices   (:voices @state/state)
-        duration (note-duration x)
-        ts       (.getTime (js/Date.))
-        freqs    (case voices
-                   1 [y]
-                   2 [y (audio/interval y 4 :add)]
-                   3 [y (audio/interval y 7 :add) (audio/interval y 12 :add)])]
+  (let [voices    (:voices @state/state)
+        duration  (note-duration x)
+        intervals (:intervals @state/state)
+        _ (prn "INNT" intervals)
+        ts        (.getTime (js/Date.))
+        freqs     (case voices
+                    1 [y]
+                    2 [y (audio/interval y (first intervals) :sub)]
+                    3 [y (audio/interval y (first intervals) :sub) (audio/interval y (last intervals) :sub)])]
     (mapv (fn [-y] {:x x :y -y :dur duration :ts ts}) freqs)))
 
 (defn page [state]
+  (update/set-page-dimensions js/window.outerWidth js/window.outerHeight )
   [:div {:style {:position "absolute"
                  :top 0
                  :bottom 0
@@ -107,7 +123,7 @@
                        update/add-pixel
                        (create-pixel-per-voice (.-pageX %) (.-pageY %)))
                       (new-pixels)
-                      (audio/play-notes))} @state])
+                      (audio/play-notes))} (dissoc @state :pixels)])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Initialize App

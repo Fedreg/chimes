@@ -98,7 +98,7 @@
   [pixel]
   (let [osc     (.createOscillator ctx)
         vol     (.createGain ctx)
-        freq    (:y pixel)
+        freq    (- (:page-height @state/state) (:y pixel))
         octave  1
         sustain (:dur pixel)
         wave    (name (:wave @state/state))]
