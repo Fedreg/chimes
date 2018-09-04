@@ -31,7 +31,7 @@
 
 (defn kill-pixel [el pixel]
   (js/setTimeout
-   #(.removeChild js/document.body el) (* 1000 (:dur pixel))))
+   #(.removeChild js/document.body el) (+ 500 (* 1000 (:dur pixel)))))
 
 
 (defn new-pixel [pixel]
@@ -61,7 +61,7 @@
     (kill-pixel new-div pixel)))
 
 (defn new-pixels
-  "Maps over the last few pixels in state to create new divs.  Channges the Y posiiton of each pixel to keep ratios even."
+  "Maps over the last few pixels in state to create new divs.  Channges the Y posiiton of each pixel locally to keep ratios even."
   []
   (let [pixels    (->> @state/state
                        :pixels
@@ -74,8 +74,8 @@
         tenor     (when tenor
                     (assoc tenor :y (- (:y bass) (* ratio (first intervals)))))
         alto      (when alto 
-                    (assoc alto :y (- (:y bass) (* ratio (last intervals)))))]
-    (prn "SDFSDF" ratio intervals bass tenor alto)
+                    (assoc alto :y (- (:y bass) (* ratio (last intervals)))))
+        pixels    (filter identity [bass tenor alto])]
   (mapv new-pixel [bass tenor alto])))
 
 (defn note-duration
@@ -99,7 +99,6 @@
   (let [voices    (:voices @state/state)
         duration  (note-duration x)
         intervals (:intervals @state/state)
-        _ (prn "INNT" intervals)
         ts        (.getTime (js/Date.))
         freqs     (case voices
                     1 [y]

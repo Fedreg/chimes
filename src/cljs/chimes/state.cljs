@@ -12,7 +12,7 @@
    :wave          :square
    :index         0
    :voices        2
-   :intervals     [3]
+   :intervals     [7]
    :page-height   1000
    :page-width    1000
    :mode          :aeolian})
