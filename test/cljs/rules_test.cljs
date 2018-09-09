@@ -1,8 +1,9 @@
 (ns rules-test
   (:require
    [chimes.rules :refer :all]
-   [cljs.test    :refer :all :include-macros true]))
+   [cljs.test    :refer-macros [deftest testign is run-tests]]))
 
+(prn "hi")
 (deftest is-interval-test
   (testing "is-interval?"
     (is (= true  (is-interval? perfect 0)))
@@ -27,3 +28,5 @@
     (is (= true  (is-interval? perfect 11)))
     (is (= false (is-interval? perfect 12)))
     ))
+
+(run-tests)

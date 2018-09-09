@@ -4,6 +4,7 @@
    [clojure.string :as str]
    [chimes.audio   :as audio]
    [chimes.state   :as state]
+   [chimes.rules   :as rules]
    [chimes.update  :as update]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -44,6 +45,9 @@
     (set! (-> new-div .-style .-left) (str (:x pixel) "px"))
     (set! (-> new-div .-id) (:ts pixel))
     (set! (-> new-div .-style .-borderRadius) (str (* 0.5 (get-property new-div :width)) "px"))
+    (set! (-> new-div .-innerHTML) (str (last (:intervals @state/state))))
+    (set! (-> new-div .-style .-fontSize) "25px")
+    (set! (-> new-div .-style .-color) "white")
     (.appendChild js/document.body new-div)
     (js/setTimeout 
      #(do
@@ -72,7 +76,7 @@
         tenor     (when (> (count pixels) 1) (nth pixels 1))
         alto      (when (> (count pixels) 2) (nth pixels 2))
         tenor     (when tenor
-                    (assoc tenor :y (- (:y bass) (* ratio (first intervals)))))
+                    (assoc tenor :y (- (:y bass) (* ratio (last intervals)))))
         alto      (when alto 
                     (assoc alto :y (- (:y bass) (* ratio (last intervals)))))
         pixels    (filter identity [bass tenor alto])]
@@ -99,10 +103,11 @@
   (let [voices    (:voices @state/state)
         duration  (note-duration x)
         intervals (:intervals @state/state)
+        interval  (rules/next-interval)
         ts        (.getTime (js/Date.))
         freqs     (case voices
                     1 [y]
-                    2 [y (audio/interval y (first intervals) :sub)]
+                    2 [y (audio/interval y interval :sub)]
                     3 [y (audio/interval y (first intervals) :sub) (audio/interval y (last intervals) :sub)])]
     (mapv (fn [-y] {:x x :y -y :dur duration :ts ts}) freqs)))
 
@@ -111,7 +116,8 @@
   [:div {:style {:position "absolute"
                  :top 0
                  :bottom 0
-                 :color "#666"
+                 :color "#777"
+                 :fontSize "16px"
                  :left 0
                  :right 0
                  :transition "background-color 4.0s ease"
@@ -121,6 +127,7 @@
                       (mapv
                        update/add-pixel
                        (create-pixel-per-voice (.-pageX %) (.-pageY %)))
+                      (update/update-index)
                       (new-pixels)
                       (audio/play-notes))} (dissoc @state :pixels)])
 

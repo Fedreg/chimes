@@ -50,7 +50,9 @@
         final (if (= :sub dir)
                 (- base diff)
                 new)]
-    final))
+    (if (> final 0)
+      final
+      (/ base 2))))
 
 (defn get-base-freq
   "Divides a frequency down until it is under 25hz and returns number of divisions it took"
@@ -98,10 +100,12 @@
   [pixel]
   (let [osc     (.createOscillator ctx)
         vol     (.createGain ctx)
-        freq    (- (:page-height @state/state) (:y pixel))
-        octave  1
+        ;; freq    (+ (:page-height @state/state) (:y pixel))
+        freq (:y pixel)
+        octave  2
         sustain (:dur pixel)
         wave    (name (:wave @state/state))]
+    (prn "MIN" freq (:y pixel))
     (.connect osc vol)
     (.connect vol (.-destination ctx))
 

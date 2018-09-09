@@ -28,7 +28,13 @@
                     :output-dir           "resources/public/js/dev"
                     :asset-path           "js/dev"
                     :source-map-timestamp true}}
-
+    {:id           "test"
+    :source-paths ["test"]
+    :compiler     {:main             rules_test 
+                   :optimizations    :none
+                   :output-to        "resources/public/js/test.js"
+                   :output-dir       "resoures/public/js/test"
+                   :asset-path       "js/dev"}}
     {:id           "min"
      :source-paths ["src/cljs"]
      :compiler     {:main            chimes.core
